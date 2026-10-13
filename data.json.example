@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "id": "proj-sample",
+      "name": "Sample Project",
+      "color": "#818cf8"
+    }
+  ],
+  "items": [
+    {
+      "id": "item-sample-1",
+      "title": "Welcome to Workitem Tracker",
+      "projectId": "proj-sample",
+      "status": "ready",
+      "isAdHoc": false,
+      "notes": "Here is an example work item to help you get started.",
+      "definitionOfDone": "Review the board layout and run npm start.",
+      "timeEstimateHours": 1,
+      "dueDate": null,
+      "timeLog": [],
+      "createdAt": "2026-10-13T00:00:00.000Z",
+      "movedToReadyAt": "2026-10-13T00:00:00.000Z",
+      "movedToDoingAt": null,
+      "completedAt": null,
+      "archivedAt": null,
+      "somedayAt": null
+    }
+  ]
+}
