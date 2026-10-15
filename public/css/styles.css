@@ -438,6 +438,9 @@ code { font-family: var(--mono); font-size: 0.92em; padding: 1px 6px; border-rad
 /* Timer */
 .timer { display: flex; align-items: baseline; gap: 8px; }
 .timer__clock {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
   font-family: var(--mono);
   font-size: 22px;
   font-weight: 600;
@@ -447,6 +450,37 @@ code { font-family: var(--mono); font-size: 0.92em; padding: 1px 6px; border-rad
   transition: color 0.3s, text-shadow 0.3s;
 }
 .timer--live .timer__clock { color: var(--success); text-shadow: 0 0 18px rgba(61, 220, 151, 0.4); }
+.timer__clock--editable {
+  gap: 7px;
+  padding: 3px 8px 3px 8px;
+  margin-left: -8px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(148, 163, 214, 0.22);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+.timer__clock--editable:hover {
+  color: #fff;
+  border-color: rgba(139, 124, 246, 0.65);
+  background: rgba(139, 124, 246, 0.12);
+  box-shadow: 0 0 16px rgba(139, 124, 246, 0.28);
+}
+.timer__clock--editable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.timer__edit-badge {
+  font-size: 13px;
+  color: var(--text-faint);
+  opacity: 0.7;
+  transition: transform 0.15s, opacity 0.15s, color 0.15s;
+}
+.timer__clock--editable:hover .timer__edit-badge {
+  color: var(--accent-2);
+  opacity: 1;
+  transform: scale(1.15);
+}
 .timer__est { font-size: 12px; color: var(--text-faint); }
 
 .progress { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
@@ -713,6 +747,128 @@ input[type='datetime-local'] { color-scheme: dark; }
 .timelog__dur { font-family: var(--mono); font-size: 12.5px; text-align: right; color: var(--text); }
 .timelog__dur--bad { color: var(--danger); }
 .timelog__add { align-self: flex-start; }
+
+/* Time modal quick editor */
+.time-modal { gap: 16px; }
+.time-edit-inputs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  background: rgba(8, 12, 26, 0.65);
+  border: 1px solid var(--border-strong);
+}
+.time-input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.time-input-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-faint);
+}
+.time-input-field {
+  width: 78px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  padding: 6px 4px;
+}
+.time-input-field::-webkit-inner-spin-button,
+.time-input-field::-webkit-outer-spin-button {
+  opacity: 0.4;
+}
+.time-input-sep {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-faint);
+  margin-top: 18px;
+}
+.time-adjust-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip--btn-add {
+  color: var(--success);
+  border-color: rgba(61, 220, 151, 0.3);
+  background: rgba(61, 220, 151, 0.06);
+}
+.chip--btn-add:hover {
+  color: #fff;
+  border-color: rgba(61, 220, 151, 0.6);
+  background: rgba(61, 220, 151, 0.18);
+}
+.chip--btn-sub {
+  color: #ff9fae;
+  border-color: rgba(242, 102, 123, 0.3);
+  background: rgba(242, 102, 123, 0.06);
+}
+.chip--btn-sub:hover {
+  color: #fff;
+  border-color: rgba(242, 102, 123, 0.6);
+  background: rgba(242, 102, 123, 0.18);
+}
+.chip--btn-zero {
+  color: var(--text-faint);
+  border-style: dashed;
+}
+.chip--btn-zero:hover {
+  color: var(--warn);
+  border-color: rgba(245, 184, 74, 0.5);
+}
+.time-preview-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--border);
+}
+.time-preview-label {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.time-preview-text {
+  font-family: var(--mono);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.time-preview__old {
+  color: var(--text-faint);
+  text-decoration: line-through;
+}
+.time-preview__new {
+  color: #fff;
+  font-weight: 600;
+}
+.time-modal__footer-links {
+  margin-top: 4px;
+  text-align: center;
+}
+.link-btn {
+  all: unset;
+  font-size: 12px;
+  color: var(--accent-2);
+  cursor: pointer;
+  transition: color 0.15s, text-decoration 0.15s;
+}
+.link-btn:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 
 /* -------------------------------------------------------------------- Menu */
 .menu {

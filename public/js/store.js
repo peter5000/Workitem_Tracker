@@ -464,3 +464,90 @@ export function updateItem(id, fields, timeLog) {
     if (log) item.timeLog = log;
   });
 }
+
+/**
+ * Adjust an item's time entries to match a target duration (in ms)
+ * without creating overlaps or timestamps in the future.
+ */
+export function calculateAdjustedTimeLog(entries, targetMs) {
+  const target = Math.max(0, Math.round(Number(targetMs) || 0));
+  if (target === 0) return [];
+
+  const now = Date.now();
+  const out = entries
+    .filter((e) => e.start && e.end)
+    .map((e) => ({ ...e, manual: true }))
+    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+
+  if (!out.length) {
+    const endIso = new Date(now).toISOString();
+    const startIso = new Date(now - target).toISOString();
+    return [{ id: uid('log'), start: startIso, end: endIso, manual: true }];
+  }
+
+  const durationOf = (e) => Math.max(0, Date.parse(e.end) - Date.parse(e.start));
+  const currentTotal = out.reduce((sum, e) => sum + durationOf(e), 0);
+  const delta = target - currentTotal;
+
+  if (delta === 0) return out;
+
+  if (delta > 0) {
+    const last = out[out.length - 1];
+    const newLastEnd = Date.parse(last.end) + delta;
+
+    if (newLastEnd <= now) {
+      last.end = new Date(newLastEnd).toISOString();
+    } else {
+      const prevEnd = out.length > 1 ? Date.parse(out[out.length - 2].end) : 0;
+      const neededDuration = durationOf(last) + delta;
+      const latestEnd = now;
+      const earliestStart = latestEnd - neededDuration;
+      if (earliestStart > prevEnd) {
+        last.start = new Date(earliestStart).toISOString();
+        last.end = new Date(latestEnd).toISOString();
+      } else {
+        last.end = new Date(now).toISOString();
+        last.start = new Date(Math.max(prevEnd + 1000, now - neededDuration)).toISOString();
+      }
+    }
+    return out;
+  }
+
+  // delta < 0: trim from most recent entry backwards
+  let toRemove = -delta;
+  for (let i = out.length - 1; i >= 0; i--) {
+    const dur = durationOf(out[i]);
+    if (dur <= toRemove) {
+      toRemove -= dur;
+      out.splice(i, 1);
+    } else {
+      const newDur = dur - toRemove;
+      out[i].end = new Date(Date.parse(out[i].start) + newDur).toISOString();
+      toRemove = 0;
+      break;
+    }
+  }
+
+  if (!out.length && target > 0) {
+    out.push({
+      id: uid('log'),
+      start: new Date(now - target).toISOString(),
+      end: new Date(now).toISOString(),
+      manual: true,
+    });
+  }
+
+  return out;
+}
+
+/** Manually set total tracked time when timer is stopped. */
+export function setTrackedTime(id, targetMs) {
+  const item = getItem(id);
+  need(item);
+  if (runningEntry(item)) {
+    throw new RuleError('Pause the timer before manually editing tracked time.');
+  }
+  const adjustedLog = calculateAdjustedTimeLog(item.timeLog, targetMs);
+  return updateItem(id, {}, adjustedLog);
+}
+

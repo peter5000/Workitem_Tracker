@@ -3,7 +3,7 @@ import * as store from './store.js';
 import { LIMITS, MSG } from './store.js';
 import { esc, fmtClock, fmtDuration, fmtHours, fmtDate, relDays, daysSince, startOfWeek } from './utils.js';
 import { projectPicker, openMenu, confirmModal, toast, attempt, lastProject, rememberProject } from './ui.js';
-import { openScopeModal, openCompleteModal, openDetailsModal } from './modals.js';
+import { openScopeModal, openCompleteModal, openDetailsModal, openEditTimerModal } from './modals.js';
 
 let seen = new Map(); // item id → status at last board render (animate only what moved)
 let capturePicker = null;
@@ -103,8 +103,15 @@ function cardHtml(item, idx = 0) {
     const p = progressOf(item);
     const stale = item.movedToDoingAt && daysSince(item.movedToDoingAt) > LIMITS.staleDoingDays;
     body = dod + `
-      <div class="timer${running ? ' timer--live' : ''}">
-        <span class="timer__clock" data-timer="${id}">${fmtClock(store.spentMs(item))}</span>
+      <div class="timer${running ? ' timer--live' : ' timer--stopped'}">
+        ${running ? `
+          <span class="timer__clock" data-timer="${id}">${fmtClock(store.spentMs(item))}</span>
+        ` : `
+          <button type="button" class="timer__clock timer__clock--editable" data-action="edit-timer" data-id="${id}" title="Timer is stopped — click to edit time" aria-label="Edit tracked time for ${esc(item.title)}">
+            <span data-timer="${id}">${fmtClock(store.spentMs(item))}</span>
+            <span class="timer__edit-badge" aria-hidden="true">✎</span>
+          </button>
+        `}
         ${item.timeEstimateHours ? `<span class="timer__est">of ${fmtHours(item.timeEstimateHours)} est</span>` : ''}
       </div>
       ${item.timeEstimateHours ? `<div class="progress" aria-hidden="true"><div class="progress__bar${p.cls}" data-progress="${id}" style="width:${p.pct}%"></div></div>` : ''}
@@ -138,6 +145,9 @@ function menuFor(item) {
     entries.push({ label: '← Back to Backlog', run: () => attempt(() => store.sendToBacklog(id)) });
   }
   if (s === 'doing') {
+    if (!running) {
+      entries.push({ label: '⏱ Adjust tracked time', run: () => openEditTimerModal(item) });
+    }
     entries.push({ label: '← Back to Ready', disabled: !store.canAddReady(id), reason: MSG.readyFull, run: toReady });
     entries.push({ label: '← Back to Backlog', run: () => attempt(() => store.sendToBacklog(id)) });
   }
@@ -445,6 +455,7 @@ function onClick(e) {
     case 'scope': openScopeModal(item, { mode: 'ready' }); break;
     case 'start': attempt(() => { store.startWork(id); toast('Focus on — timer started ▶', 'info'); }); break;
     case 'timer': attempt(() => store.toggleTimer(id)); break;
+    case 'edit-timer': openEditTimerModal(item); break;
     case 'complete': openCompleteModal(item); break;
     case 'adhoc-new': openScopeModal(null, { mode: 'adhoc' }); break;
     case 'archive-done': archiveDone(); break;

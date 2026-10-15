@@ -302,3 +302,151 @@ export function openDetailsModal(item) {
     ],
   });
 }
+
+// ---------------------------------------------------------------------------
+// Quick Edit Tracked Time (when timer is stopped)
+// ---------------------------------------------------------------------------
+export function openEditTimerModal(item) {
+  if (store.runningEntry(item)) {
+    throw new Error('Pause the timer before editing tracked time.');
+  }
+  const initialMs = store.spentMs(item);
+  let currentMs = initialMs;
+
+  const msToHms = (ms) => {
+    const totalSec = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    return { h, m, s };
+  };
+
+  const hmsToMs = (h, m, s) => {
+    const hours = Math.max(0, Number(h) || 0);
+    const mins = Math.max(0, Math.min(59, Number(m) || 0));
+    const secs = Math.max(0, Math.min(59, Number(s) || 0));
+    return (hours * 3600 + mins * 60 + secs) * 1000;
+  };
+
+  const { h: initH, m: initM, s: initS } = msToHms(initialMs);
+
+  const body = document.createElement('div');
+  body.className = 'form-stack time-modal';
+  body.innerHTML = `
+    <p class="callout">
+      Forgot to start or stop the timer? Set the actual time spent on this item.
+    </p>
+
+    <div class="field">
+      <span class="field__label">⏱ Total tracked time</span>
+      <div class="time-edit-inputs">
+        <div class="time-input-group">
+          <label class="time-input-label" for="time-h">Hours</label>
+          <input type="number" id="time-h" name="timeH" class="input input--num time-input-field" min="0" max="999" step="1" value="${initH}" autofocus>
+        </div>
+        <span class="time-input-sep">:</span>
+        <div class="time-input-group">
+          <label class="time-input-label" for="time-m">Minutes</label>
+          <input type="number" id="time-m" name="timeM" class="input input--num time-input-field" min="0" max="59" step="1" value="${initM}">
+        </div>
+        <span class="time-input-sep">:</span>
+        <div class="time-input-group">
+          <label class="time-input-label" for="time-s">Seconds</label>
+          <input type="number" id="time-s" name="timeS" class="input input--num time-input-field" min="0" max="59" step="1" value="${initS}">
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Quick adjustments</span>
+      <div class="time-adjust-chips">
+        <button type="button" class="chip chip--btn chip--btn-sub" data-delta="-3600000">-1h</button>
+        <button type="button" class="chip chip--btn chip--btn-sub" data-delta="-1800000">-30m</button>
+        <button type="button" class="chip chip--btn chip--btn-sub" data-delta="-900000">-15m</button>
+        <button type="button" class="chip chip--btn chip--btn-add" data-delta="900000">+15m</button>
+        <button type="button" class="chip chip--btn chip--btn-add" data-delta="1800000">+30m</button>
+        <button type="button" class="chip chip--btn chip--btn-add" data-delta="3600000">+1h</button>
+        <button type="button" class="chip chip--btn chip--btn-zero" data-zero>Reset to 0</button>
+      </div>
+    </div>
+
+    <div class="time-preview-box">
+      <span class="time-preview-label">Change preview:</span>
+      <span class="time-preview-text" data-preview></span>
+    </div>
+
+    <div class="time-modal__footer-links">
+      <button type="button" class="link-btn" data-open-detailed>Need to edit individual session dates? Open full time log →</button>
+    </div>`;
+
+  const inputH = body.querySelector('#time-h');
+  const inputM = body.querySelector('#time-m');
+  const inputS = body.querySelector('#time-s');
+  const previewEl = body.querySelector('[data-preview]');
+
+  const updatePreview = () => {
+    currentMs = hmsToMs(inputH.value, inputM.value, inputS.value);
+    const diff = currentMs - initialMs;
+    const prevFormatted = fmtClock(initialMs);
+    const newFormatted = fmtClock(currentMs);
+
+    if (diff === 0) {
+      previewEl.innerHTML = `<span class="delta delta--ok">No change (${newFormatted})</span>`;
+    } else if (diff > 0) {
+      previewEl.innerHTML = `<span class="time-preview__old">${prevFormatted}</span> → <strong class="time-preview__new">${newFormatted}</strong> <span class="delta delta--over">+${fmtDuration(diff)}</span>`;
+    } else {
+      previewEl.innerHTML = `<span class="time-preview__old">${prevFormatted}</span> → <strong class="time-preview__new">${newFormatted}</strong> <span class="delta delta--under">-${fmtDuration(-diff)}</span>`;
+    }
+  };
+
+  const setFromMs = (ms) => {
+    const clamped = Math.max(0, ms);
+    const { h, m, s } = msToHms(clamped);
+    inputH.value = h;
+    inputM.value = m;
+    inputS.value = s;
+    updatePreview();
+  };
+
+  body.querySelectorAll('.time-input-field').forEach((inp) => {
+    inp.addEventListener('input', updatePreview);
+  });
+
+  body.addEventListener('click', (e) => {
+    const deltaBtn = e.target.closest('[data-delta]');
+    if (deltaBtn) {
+      const delta = Number(deltaBtn.dataset.delta);
+      setFromMs(currentMs + delta);
+      return;
+    }
+    if (e.target.closest('[data-zero]')) {
+      setFromMs(0);
+      return;
+    }
+    if (e.target.closest('[data-open-detailed]')) {
+      document.querySelector('dialog.modal')?.close();
+      openDetailsModal(item);
+    }
+  });
+
+  updatePreview();
+
+  openModal({
+    title: 'Adjust tracked time',
+    subtitle: `“${item.title}” · Currently ${fmtClock(initialMs)}`,
+    body,
+    actions: [
+      { label: 'Cancel' },
+      {
+        label: 'Save time',
+        primary: true,
+        variant: 'primary',
+        onClick: () => {
+          store.setTrackedTime(item.id, currentMs);
+          toast(`Tracked time updated to ${fmtClock(currentMs)} ✓`, 'success');
+        },
+      },
+    ],
+  });
+}
+
