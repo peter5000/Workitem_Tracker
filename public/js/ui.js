@@ -187,14 +187,18 @@ export function openMenu(anchor, entries) {
   el.querySelector('.menu__item:not([aria-disabled])')?.focus();
 }
 
-document.addEventListener('pointerdown', (e) => {
-  if (activeMenu && !activeMenu.el.contains(e.target) && !activeMenu.anchor.contains(e.target)) closeMenu();
-}, true);
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeMenu();
-});
-window.addEventListener('resize', closeMenu);
-document.addEventListener('scroll', closeMenu, true);
+if (typeof document !== 'undefined') {
+  document.addEventListener('pointerdown', (e) => {
+    if (activeMenu && !activeMenu.el.contains(e.target) && !activeMenu.anchor.contains(e.target)) closeMenu();
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMenu();
+  });
+  document.addEventListener('scroll', closeMenu, true);
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', closeMenu);
+}
 
 // ---------------------------------------------------------------------------
 // Project picker: pre-defined list + inline creation with a color

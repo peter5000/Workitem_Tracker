@@ -1,7 +1,7 @@
 /** Renders the three pages and handles all in-view interactions via delegation. */
 import * as store from './store.js';
 import { LIMITS, MSG } from './store.js';
-import { esc, fmtClock, fmtDuration, fmtHours, fmtDate, relDays, daysSince, startOfWeek } from './utils.js';
+import { esc, fmtClock, fmtDuration, fmtHours, fmtDate, endOfDay, relDays, daysSince, startOfWeek } from './utils.js';
 import { projectPicker, openMenu, confirmModal, toast, attempt, lastProject, rememberProject } from './ui.js';
 import { openScopeModal, openCompleteModal, openDetailsModal, openEditTimerModal } from './modals.js';
 
@@ -52,10 +52,10 @@ function progressOf(item, now = Date.now()) {
 
 const emptyHint = (text) => `<p class="empty-hint">${esc(text)}</p>`;
 
-function dueChip(item) {
+export function dueChip(item, now = Date.now()) {
   if (!item.dueDate) return '';
-  const due = new Date(item.dueDate + 'T23:59:59');
-  const isOverdue = !['done', 'archived'].includes(item.status) && due.getTime() < Date.now();
+  const due = endOfDay(item.dueDate);
+  const isOverdue = !['done', 'archived'].includes(item.status) && due && due.getTime() < now;
   const formatted = fmtDate(item.dueDate);
   if (isOverdue) return `<span class="chip chip--overdue" title="Overdue!">📅 Overdue (${formatted})</span>`;
   return `<span class="chip">📅 ${formatted}</span>`;

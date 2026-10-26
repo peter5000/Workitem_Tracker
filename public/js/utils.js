@@ -54,11 +54,48 @@ export function startOfWeek(date = new Date()) {
   return d;
 }
 
-export const fmtDate = (iso, opts = { month: 'short', day: 'numeric' }) =>
-  new Date(iso).toLocaleDateString(undefined, opts);
+/** Parse an ISO date/timestamp or "YYYY-MM-DD" string into a Date object.
+ * Date-only strings ("YYYY-MM-DD") are treated as local calendar dates
+ * so they don't shift backwards in timezones with negative UTC offsets.
+ */
+export function parseDate(iso) {
+  if (!iso) return null;
+  if (iso instanceof Date) return Number.isNaN(iso.getTime()) ? null : iso;
+  if (typeof iso === 'string') {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
+    if (match) {
+      return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
+  }
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
 
-export const fmtDateTime = (iso) =>
-  new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+/** End of day (23:59:59.999) local time for an ISO date or "YYYY-MM-DD" string. */
+export function endOfDay(iso) {
+  if (!iso) return null;
+  if (typeof iso === 'string') {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
+    if (match) {
+      return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 23, 59, 59, 999);
+    }
+  }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const copy = new Date(d);
+  copy.setHours(23, 59, 59, 999);
+  return copy;
+}
+
+export const fmtDate = (iso, opts = { month: 'short', day: 'numeric' }, locale = undefined) => {
+  const d = parseDate(iso);
+  return d ? d.toLocaleDateString(locale, opts) : '';
+};
+
+export const fmtDateTime = (iso, locale = undefined) => {
+  const d = parseDate(iso);
+  return d ? d.toLocaleString(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+};
 
 export function daysSince(iso, now = Date.now()) {
   return Math.floor((now - Date.parse(iso)) / 86400000);

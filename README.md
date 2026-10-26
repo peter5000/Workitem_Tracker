@@ -15,6 +15,7 @@ A tiny, local, file-based kanban for personal projects. Built around one idea:
 npm install
 npm start          # http://localhost:3000
 npm run dev        # same, auto-restarts on server changes
+npm test           # run unit tests (node:test)
 ```
 
 Everything is stored in `data.json` at the project root (automatically created with sample data on first run).
@@ -36,6 +37,8 @@ It is included in `.gitignore` so your personal tasks and time logs remain priva
   Leaving Doing stops the timer.
 - **Time log**: open any Doing/Done card (click its title) to add, edit, or delete
   entries. Overlapping entries are rejected so time is never counted twice.
+- **Due dates**: optional calendar dates (`YYYY-MM-DD`). Formatted in local calendar
+  time so dashboard cards accurately reflect the date chosen in details across all timezones.
 - **Weekly reset**: click **Archive** on the Done column. The Archive page groups
   items by week and shows time tracked plus how close your estimates were.
 - Over-4-hour estimates show a hint to slice the item. Cards that have been in
@@ -51,6 +54,7 @@ It is included in `.gitignore` so your personal tasks and time logs remain priva
 ```
 server.js            Express: static files + GET/PUT /api/data (validates limits, atomic writes)
 data.json            Your board (auto-created)
+test/                Unit tests (node:test)
 public/
   index.html
   css/styles.css
