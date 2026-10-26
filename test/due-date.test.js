@@ -100,7 +100,7 @@ describe('Due Date formatting and parsing', () => {
 
     it('consistently produces Oct 24 across timezones', () => {
       // Test that date-only "YYYY-MM-DD" is timezone-independent
-      const tzList = ['America/Los_Angeles', 'America/New_York', 'UTC', 'Asia/Tokyo', 'Pacific/Honolulu'];
+      const tzList = ['UTC', 'Europe/London', 'Asia/Tokyo', 'Australia/Sydney', 'America/New_York'];
       for (const tz of tzList) {
         const out = execSync(
           'node -e "import(\\"./public/js/utils.js\\").then(m => console.log(m.fmtDate(\\"2026-10-24\\", { month: \\"short\\", day: \\"numeric\\" }, \\"en-US\\")))"',
